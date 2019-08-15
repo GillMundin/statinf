@@ -1,0 +1,128 @@
+---
+title: "ToothGrowth analysis"
+author: "Gill Mundin"
+date: "15 August 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## 1 - Overview
+This project investigates the ToothGrowth data and tests whether type and dose of two supplements influence tooth length.
+
+##4 - Data exploration
+Looking at the head and the dimensions of the dataframe.
+```{r data exploration, echo = FALSE} 
+data("ToothGrowth")
+head(ToothGrowth, 3)
+dim(ToothGrowth)
+```
+
+```{r subsets, echo = FALSE}
+tg <- ToothGrowth
+VClo <- tg$len[1:10]
+VCmid <- tg$len[11:20]
+VChi <- tg$len[21:30]
+OJlo <- tg$len[31:40]
+OJmid <- tg$len[41:50]
+OJhi <- tg$len[51:60]
+```
+
+
+###Summary of means and SDs for each supplement split by dose:
+```{r data summary by supp and dose}
+with(ToothGrowth,
+     aggregate(len,
+               list(supp, dose),
+               function(x) {c(Mean = mean(x), SD = sd(x))
+                       }
+               )
+     )
+```
+
+###Exploratory plots
+```{r exploratory plots, fig.height=3}
+library(ggplot2)
+plot1 <- ggplot(aes(x = dose, y = len), data = ToothGrowth)
+
+plot1 + geom_boxplot(aes(fill = dose, group = dose)) +
+        facet_wrap(~supp) +
+        ggtitle("Box plots of tooth growth split by supplement and dose")
+```
+
+##2 - Assumptions
+There are a number of comparisons that could be made and each comparison increases the probability of a type 1 error.  I have kept the comparisons to a minimum, but have not controlled the type 1 error to be 5% overall.  The conclusions may therefore not be valid, and alternative tests (eg, ANOVA) may be more appropriate. 
+
+Based on the summary statistics and differences in the SDs between the supplements, we cannot assume equal variance.  There is a small n number, so I have chosen to use Gosset's (Student's) t-test and confidence intervals rather than a normal distibution.  The data are treated as unpaired.
+
+I am making the assumption that the desirable outcome is a greater increase in tooth length, and that you would want to choose the supplement and dose that achieves this.
+
+##3 - Hypotheses
+
+###First possible hypothesis
+H0 : Supplement dose does not affect tooth length
+Ha : Tooth length increases with supplement dose
+
+###Second possible hypothesis
+H0 : There is no difference between VC and OJ in relation to tooth length
+Ha : There is a difference between VC and OJ in relation to tooth length, in either direction
+
+##Testing first hypothesis
+The code and outcome of the ttests are included in the appendix.
+
+Compare the following subsets, H0 is that there is no difference between doses:
+
+* OJlo vs OJhi
+* OJmid vs OJhi
+* VClo vs VChi
+* VCmid vs VChi
+
+For each of the comparisons, the 95% confidence interval does not contain 0, and the p-values are small and <0.05, meaning that the H0 should be rejected, and that there is a statistical difference between the doses compared (recognising that we haven't controlled the type 1 error rate for multiple testing.)
+
+##Testing the second hypothesis
+Given that there is a difference in tooth length between the mid and highest doses for each supplement, I have chosen to compare just the highest dose of the supplements to test the hypothesis that there is no difference between VC and OJ in relation to tooth length.
+
+* OJhi vs VChi
+
+At the highest dose, comparing the OJ and VC supplements results in a confidence interval that contains 0 and a p-value of 0.9, meaning that there is no evidence to reject H0, and we conclude that the two supplements have the same effect on tooth length at the highest dose.
+
+##Conclusions
+Two supplements were tested at 3 doses.  Under the assumption that greater tooth length is desirable, it is beneficial to give the highest dose of 2 mg of either supplement, however, it does not appear to matter which supplement is chosen.  From the box plots and summary statistics, the data for OJ suggests that it is less variable than VC, however the sample size is small and this may change with more observations.
+
+
+## Appendix
+###Creating data subsets
+```{r subsets eval, echo = TRUE}
+tg <- ToothGrowth
+VClo <- tg$len[1:10]
+VCmid <- tg$len[11:20]
+VChi <- tg$len[21:30]
+OJlo <- tg$len[31:40]
+OJmid <- tg$len[41:50]
+OJhi <- tg$len[51:60]
+```
+###Dose comparisons
+###OJ lo vs hi
+```{r comp1, echo= TRUE}
+t.test(OJlo, OJhi, paired = FALSE, var.equal = FALSE)
+```
+###OJ mid vs hi
+```{r comp2, echo= TRUE}
+t.test(OJmid, OJhi, paired = FALSE, var.equal = FALSE)
+```
+###VC lo vs hi
+```{r comp3, echo= TRUE}
+t.test(VClo, VChi, paired = FALSE, var.equal = FALSE)
+```
+###VC mid vs hi
+```{r comp4, echo= TRUE}
+t.test(VCmid, VChi, paired = FALSE, var.equal = FALSE)
+```
+
+###Supplement comparison
+###OJhi vs VChi
+```{r comp5, echo= TRUE}
+t.test(OJhi, VChi, paired = FALSE, var.equal = FALSE)
+```
